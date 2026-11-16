@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#7c7ef2">
+  <title>Control de Actividades</title>
+
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./assets/icon-512.png">
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+
+  <div class="theme-bar">
+    <button type="button" id="btn-tema" class="btn-tema">🌙 Modo oscuro</button>
+  </div>
+
+  <!-- VISTA 1: LOGIN (SOLO SE PIDE UNA VEZ) -->
+  <main id="vista-login" class="vista">
+    <section class="card login-card">
+      <h1>Control de Actividades</h1>
+      <p>Ingresa con tu cuenta autorizada</p>
+
+      <form id="form-login">
+        <div class="campo">
+          <label for="login-email">Correo</label>
+          <input type="email" id="login-email" placeholder="" required>
+        </div>
+
+        <div class="campo">
+          <label for="login-password">Contraseña</label>
+          <input type="password" id="login-password" placeholder="" required>
+        </div>
+
+        <button type="submit" class="btn btn-primario">Ingresar</button>
+        <p id="login-error" class="mensaje-error" hidden></p>
+      </form>
+    </section>
+  </main>
+
+  <!-- VISTA 2: INICIO (HISTORIAL + NUEVA ACTIVIDAD) -->
+  <main id="vista-actividades" class="vista" hidden>
+    <header class="topbar">
+      <h1>Mis Actividades</h1>
+    </header>
+
+    <div class="subtabs">
+      <button type="button" id="tab-btn-historial" class="subtab-btn activo" data-target="sub-act-historial">📋 Historial</button>
+      <button type="button" id="tab-btn-nueva" class="subtab-btn" data-target="sub-act-nueva">➕ Nueva actividad</button>
+    </div>
+
+    <!-- Subpestaña A: Historial con Buscador por Nombre y Mes -->
+    <section id="sub-act-historial" class="subtab-contenido">
+      <div class="filtros-historial">
+        <div class="buscador-box">
+          <span class="buscador-icono">🔍</span>
+          <input type="search" id="buscar-act-nombre" placeholder="Buscar actividad" autocomplete="off">
+        </div>
+
+        <div class="filtro-fecha-fila">
+          <label for="buscar-act-mes">📅 Mes:</label>
+          <input type="month" id="buscar-act-mes">
+          <button type="button" id="btn-limpiar-act" class="btn btn-secundario btn-mini" hidden>Limpiar</button>
+        </div>
+      </div>
+
+      <div id="lista-actividades" class="lista-tarjetas"></div>
+    </section>
+
+    <!-- Subpestaña B: Crear Nueva Actividad -->
+    <section id="sub-act-nueva" class="subtab-contenido" hidden>
+      <div class="card">
+        <h2>Nueva Actividad</h2>
+        <form id="form-nueva-actividad">
+          <div class="campo">
+            <label for="act-nombre">Nombre</label>
+            <input type="text" id="act-nombre" placeholder="" required>
+          </div>
+
+          <div class="campo">
+            <label for="act-fecha">Fecha</label>
+            <input type="date" id="act-fecha" required>
+          </div>
+
+          <div class="campo">
+            <label for="act-precio">Precio por unidad (S/)</label>
+            <input type="number" id="act-precio" step="any" min="0.01" inputmode="decimal" placeholder="" required>
+          </div>
+
+          <button type="submit" class="btn btn-primario">Crear Actividad</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <!-- VISTA 3: DETALLE DE ACTIVIDAD (ESTILO APP) -->
+  <main id="vista-detalle" class="vista vista-con-navbar" hidden>
+    <header class="topbar">
+      <button id="btn-volver" class="btn btn-secundario">&larr; Volver</button>
+      <div class="topbar-info">
+        <h1 id="detalle-titulo">Actividad</h1>
+        <small id="detalle-subtitulo">Fecha | Precio unitario</small>
+      </div>
+    </header>
+
+    <!-- SECCIÓN 1: PEDIDOS -->
+    <section id="tab-pedidos" class="tab-contenido">
+      <div class="subtabs">
+        <button type="button" class="subtab-btn activo" data-target="sub-ped-agregar">➕ Agregar pedido</button>
+        <button type="button" class="subtab-btn" data-target="sub-ped-lista">📋 Lista de pedidos</button>
+      </div>
+
+      <!-- Subpestaña A: Nuevo Pedido -->
+      <div id="sub-ped-agregar" class="subtab-contenido">
+        <div class="card">
+          <h3>Nuevo Pedido</h3>
+          <form id="form-nuevo-pedido">
+            <div class="campo">
+              <label for="ped-cliente">Nombre del cliente</label>
+              <input type="text" id="ped-cliente" placeholder="" required>
+            </div>
+
+            <div class="campo">
+              <label for="ped-cantidad">Cantidad</label>
+              <input type="number" id="ped-cantidad" min="1" step="1" inputmode="numeric" placeholder="" required>
+            </div>
+
+            <!-- Total automático -->
+            <div class="total-automatico-box">
+              <span>Total a pagar:</span>
+              <strong id="ped-preview-total">S/ 0.00</strong>
+            </div>
+
+            <!-- Opciones de pago -->
+            <div class="campo">
+              <label>Estado de pago <small class="texto-tenue">(opcional)</small></label>
+              <div class="selector-tipo">
+                <button type="button" class="pago-opt-btn" data-modo="todo">✅ Canceló todo</button>
+                <button type="button" class="pago-opt-btn" data-modo="adelanto">💵 Adelanto</button>
+              </div>
+              <input type="hidden" id="ped-modo-pago" value="ninguno">
+              <small class="ayuda-pago">Si aún no pagó nada, presiona directamente Guardar Pedido.</small>
+            </div>
+
+            <!-- Caja que solo aparece si elige "Adelanto" -->
+            <div class="campo" id="grupo-ped-adelanto" hidden>
+              <label for="ped-adelanto-monto">¿Cuánto adelantó? (S/)</label>
+              <input type="number" id="ped-adelanto-monto" step="any" min="0.01" inputmode="decimal" placeholder="">
+              <small id="ped-adelanto-error" class="error-inline" hidden></small>
+            </div>
+
+            <button type="submit" id="btn-guardar-pedido" class="btn btn-primario">Guardar Pedido</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Subpestaña B: Lista de Pedidos + Buscador -->
+      <div id="sub-ped-lista" class="subtab-contenido" hidden>
+        <div class="buscador-box">
+          <span class="buscador-icono">🔍</span>
+          <input type="search" id="buscar-pedido" placeholder="Buscar cliente" autocomplete="off">
+        </div>
+
+        <div id="box-editar-pedido" class="card card-edicion" hidden>
+          <h3>Editar Pedido</h3>
+          <form id="form-editar-pedido">
+            <input type="hidden" id="edit-ped-id">
+            <div class="campo">
+              <label for="edit-ped-cliente">Cliente</label>
+              <input type="text" id="edit-ped-cliente" required>
+            </div>
+            <div class="campo">
+              <label for="edit-ped-cantidad">Cantidad</label>
+              <input type="number" id="edit-ped-cantidad" min="1" step="1" inputmode="numeric" required>
+            </div>
+            <div class="campo">
+              <label for="edit-ped-pagado">Monto pagado total (S/)</label>
+              <input type="number" id="edit-ped-pagado" step="any" min="0" inputmode="decimal" required>
+              <small id="edit-ped-error" class="error-inline" hidden></small>
+            </div>
+            <div class="acciones-fila">
+              <button type="submit" id="btn-actualizar-pedido" class="btn btn-primario">Actualizar</button>
+              <button type="button" id="btn-cancelar-edicion" class="btn btn-secundario">Cancelar</button>
+            </div>
+          </form>
+        </div>
+
+        <div id="lista-pedidos" class="lista-tarjetas"></div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN 2: GASTOS -->
+    <section id="tab-gastos" class="tab-contenido" hidden>
+      <div class="subtabs">
+        <button type="button" class="subtab-btn activo" data-target="sub-gas-agregar">➕ Registrar gasto</button>
+        <button type="button" class="subtab-btn" data-target="sub-gas-lista">📋 Lista de gastos</button>
+      </div>
+
+      <div id="sub-gas-agregar" class="subtab-contenido">
+        <div class="card">
+          <h3>Nuevo Gasto</h3>
+          <form id="form-nuevo-gasto">
+            <div class="campo">
+              <label for="gas-descripcion">Ingrediente</label>
+              <input type="text" id="gas-descripcion" placeholder="" required>
+            </div>
+            <div class="campo">
+              <label for="gas-costo">Precio (S/)</label>
+              <input type="number" id="gas-costo" step="any" min="0.01" inputmode="decimal" placeholder="" required>
+            </div>
+            <button type="submit" class="btn btn-primario">Guardar Gasto</button>
+          </form>
+        </div>
+      </div>
+
+      <div id="sub-gas-lista" class="subtab-contenido" hidden>
+        <div class="card tabla-card">
+          <table class="tabla-datos">
+            <thead>
+              <tr>
+                <th>Ingrediente</th>
+                <th>Precio</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-gastos"></tbody>
+            <tfoot>
+              <tr class="fila-total">
+                <td><strong>TOTAL</strong></td>
+                <td><strong id="total-gastos-tabla">S/ 0.00</strong></td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN 3: DONACIONES -->
+    <section id="tab-donaciones" class="tab-contenido" hidden>
+      <div class="subtabs">
+        <button type="button" class="subtab-btn activo" data-target="sub-don-agregar">➕ Registrar donación</button>
+        <button type="button" class="subtab-btn" data-target="sub-don-lista">📋 Lista de donaciones</button>
+      </div>
+
+      <div id="sub-don-agregar" class="subtab-contenido">
+        <div class="card">
+          <h3>Nueva Donación</h3>
+          <form id="form-nueva-donacion">
+            <div class="campo">
+              <label>¿Qué tipo de donación es?</label>
+              <div class="selector-tipo">
+                <button type="button" class="tipo-btn activo" data-tipo="dinero">💵 Dinero</button>
+                <button type="button" class="tipo-btn" data-tipo="ingrediente">🌽 Ingrediente</button>
+              </div>
+              <input type="hidden" id="don-tipo" value="dinero">
+            </div>
+
+            <div class="campo">
+              <label for="don-donante">¿Quién donó?</label>
+              <input type="text" id="don-donante" placeholder="" required>
+            </div>
+
+            <div class="campo" id="grupo-don-monto">
+              <label for="don-monto">Monto en efectivo (S/)</label>
+              <input type="number" id="don-monto" step="any" min="0.01" inputmode="decimal" placeholder="" required>
+            </div>
+
+            <div class="campo" id="grupo-don-ingrediente" hidden>
+              <label for="don-ingrediente">¿Qué ingrediente donó?</label>
+              <input type="text" id="don-ingrediente" placeholder="">
+            </div>
+
+            <button type="submit" class="btn btn-primario">Guardar Donación</button>
+          </form>
+        </div>
+      </div>
+
+      <div id="sub-don-lista" class="subtab-contenido" hidden>
+        <div class="card tabla-card">
+
+          <div class="filtro-donaciones">
+            <button type="button" class="filtro-don-btn activo" data-filtro="todos">Todas</button>
+            <button type="button" class="filtro-don-btn" data-filtro="dinero">💵 Dinero</button>
+            <button type="button" class="filtro-don-btn" data-filtro="ingrediente">🌽 Ingredientes</button>
+          </div>
+
+          <table class="tabla-datos">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Tipo</th>
+                <th>Detalle / Monto</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-donaciones"></tbody>
+            <tfoot id="tfoot-donaciones" hidden>
+              <tr class="fila-total">
+                <td colspan="2"><strong>TOTAL DINERO</strong></td>
+                <td colspan="2"><strong id="total-donaciones-tabla">S/ 0.00</strong></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN 4: BALANCE FINAL -->
+    <section id="tab-balance" class="tab-contenido" hidden>
+      <div class="card hero-ganancia">
+        <span class="hero-etiqueta">Ganancia Neta Real</span>
+        <strong id="bal-ganancia" class="hero-monto">S/ 0.00</strong>
+        <small id="bal-nota-caja" class="hero-subnota">Recaudado al momento: S/ 0.00</small>
+      </div>
+
+      <div class="card">
+        <h3>Ventas y Cobranza</h3>
+        <div class="grafico-contenedor">
+          <div id="grafico-circular" class="grafico-dona">
+            <div class="grafico-centro">
+              <span id="grafico-porcentaje">0%</span>
+              <small>cobrado</small>
+            </div>
+          </div>
+
+          <div class="grafico-datos">
+            <div class="dato-fila">
+              <span>Venta total:</span>
+              <strong id="bal-vendido">S/ 0.00</strong>
+            </div>
+            <div class="dato-fila dato-verde">
+              <span>● Ya cobrado:</span>
+              <strong id="bal-recaudado">S/ 0.00</strong>
+            </div>
+            <div class="dato-fila dato-rojo">
+              <span>● Por cobrar:</span>
+              <strong id="bal-por-cobrar">S/ 0.00</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Gastos e Inversión</h3>
+        <ul class="lista-balance">
+          <li><span>Unidades vendidas:</span> <strong id="bal-unidades">0</strong></li>
+          <li><span>Total invertido en gastos:</span> <strong id="bal-gastos">S/ 0.00</strong></li>
+          <li><span>Donaciones en dinero:</span> <strong id="bal-donaciones" class="texto-verde">- S/ 0.00</strong></li>
+          <hr>
+          <li class="destacado"><span>Gasto real de tu bolsillo:</span> <strong id="bal-gasto-real">S/ 0.00</strong></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- BARRA DE NAVEGACIÓN INFERIOR -->
+    <nav class="bottom-nav" aria-label="Navegación de actividad">
+      <button type="button" class="nav-item activo" data-tab="tab-pedidos">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+          <rect x="9" y="3" width="6" height="4" rx="1"/>
+          <path d="M9 12h6M9 16h4"/>
+        </svg>
+        <span>Pedidos</span>
+      </button>
+
+      <button type="button" class="nav-item" data-tab="tab-gastos">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <path d="M16 10a4 4 0 0 1-8 0"/>
+        </svg>
+        <span>Gastos</span>
+      </button>
+
+      <button type="button" class="nav-item" data-tab="tab-donaciones">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 12 20 22 4 22 4 12"/>
+          <rect x="2" y="7" width="20" height="5"/>
+          <line x1="12" y1="22" x2="12" y2="7"/>
+          <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
+          <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+        </svg>
+        <span>Donaciones</span>
+      </button>
+
+      <button type="button" class="nav-item" data-tab="tab-balance">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
+          <path d="M22 12A10 10 0 0 0 12 2v10z"/>
+        </svg>
+        <span>Balance</span>
+      </button>
+    </nav>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./js/config.js"></script>
+  <script src="./js/SupabaseService.js"></script>
+  <script src="./js/ActividadManager.js"></script>
+  <script src="./js/app.js"></script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js');
+      });
+    }
+  </script>
+</body>
+</html>
